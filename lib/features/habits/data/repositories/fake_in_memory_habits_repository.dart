@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+
 import '../../../../core/utils/date_only.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/repositories/habits_repository.dart';
@@ -17,26 +19,13 @@ class FakeInMemoryHabitsRepository implements HabitsRepository {
   }
 
   @override
-  Future<void> addHabit(Habit habit) async {
-    _habits.add(habit);
-    _emit();
-  }
-
-  @override
-  Future<void> deleteHabit(String habitId) async {
-    _habits.removeWhere((h) => h.id == habitId);
-    _emit();
-  }
-
-  @override
-  Future<List<Habit>> getHabits() async {
-    return List.unmodifiable(_habits);
-  }
-
-  @override
   Stream<List<Habit>> watchHabits() {
+    // broadcast + valeur initiale déjà envoyée dans le ctor via _emit()
     return _controller.stream;
   }
+
+  @override
+  Future<List<Habit>> getHabits() async => List.unmodifiable(_habits);
 
   @override
   Future<Habit?> getHabitById(String habitId) async {
@@ -48,36 +37,64 @@ class FakeInMemoryHabitsRepository implements HabitsRepository {
   }
 
   @override
-  Future<void> toggleHabitForToday({
+  Future<void> addHabit(Habit habit) async {
+    _habits.insert(0, habit);
+    _emit();
+  }
+
+  @override
+  Future<void> deleteHabit(String habitId) async {
+    _habits.removeWhere((h) => h.id == habitId);
+    _emit();
+  }
+
+  @override
+  Future<void> restoreHabit(Habit habit) async {
+    final exists = _habits.any((h) => h.id == habit.id);
+    if (!exists) {
+      _habits.insert(0, habit);
+      _emit();
+    }
+  }
+
+  @override
+  Future<void> toggleHabitForDate({
     required String habitId,
-    required DateTime today,
+    required DateTime date,
   }) async {
+    debugPrint('REPO TOGGLE => habitId=$habitId date=$date');
     final index = _habits.indexWhere((h) => h.id == habitId);
     if (index == -1) return;
 
     final habit = _habits[index];
-    final normalizedToday = dateOnly(today);
+    final day = dateOnly(date);
 
-    final normalizedDays =
-        habit.completedDays.map(dateOnly).toList();
+    final set = habit.completedDays.map(dateOnly).toSet();
 
-    final alreadyDone =
-        normalizedDays.contains(normalizedToday);
-
-    final updatedDays = [
-      for (final d in normalizedDays)
-        if (d != normalizedToday) d,
-      if (!alreadyDone) normalizedToday,
-    ];
+    if (set.contains(day)) {
+      set.remove(day);
+    } else {
+      set.add(day);
+    }
 
     _habits[index] = Habit(
       id: habit.id,
       name: habit.name,
       createdAt: habit.createdAt,
-      completedDays: updatedDays,
+      completedDays: set.toList(),
     );
 
     _emit();
+  }
+
+  @override
+  Future<void> toggleHabitForToday({
+    required String habitId,
+    required DateTime today,
+  }) async {
+    // On réutilise la logique date (source unique)
+    await toggleHabitForDate(habitId: habitId, date: today);
+    
   }
 
   void dispose() {

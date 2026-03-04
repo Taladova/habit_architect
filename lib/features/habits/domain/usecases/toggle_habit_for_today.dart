@@ -13,7 +13,6 @@ class ToggleHabitForToday {
     required String habitId,
     required DateTime now,
   }) async {
-    // ✅ Validation (senior)
     if (habitId.trim().isEmpty) {
       return Err(ValidationFailure('habitId ne doit pas être vide.'));
     }
@@ -21,30 +20,22 @@ class ToggleHabitForToday {
     final today = dateOnly(now);
 
     try {
-      final habit = await _repo.getHabitById(habitId);
-      if (habit == null) {
+      // 1) check habit exists
+      final before = await _repo.getHabitById(habitId);
+      if (before == null) {
         return Err(ValidationFailure('Habitude introuvable.'));
       }
 
-      // ✅ Action côté repository (source de vérité / persistence)
+      // 2) toggle in repo (source de vérité)
       await _repo.toggleHabitForToday(habitId: habitId, today: today);
 
-      // ✅ Retourner une version "mise à jour" (utile pour tests / UI)
-      final completed = habit.completedDays.map(dateOnly).toList();
-      final alreadyDone = completed.contains(today);
+      // 3) re-read after toggle (retour fiable)
+      final after = await _repo.getHabitById(habitId);
+      if (after == null) {
+        return Err(RepositoryFailure('Habitude introuvable après toggle.'));
+      }
 
-      final updated = Habit(
-        id: habit.id,
-        name: habit.name,
-        createdAt: habit.createdAt,
-        completedDays: [
-          for (final d in completed)
-            if (d != today) d,
-          if (!alreadyDone) today,
-        ],
-      );
-
-      return Ok(updated);
+      return Ok(after);
     } catch (e) {
       return Err(RepositoryFailure('Erreur repository: $e'));
     }

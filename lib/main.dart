@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'features/habits/presentation/pages/habits_list_page.dart';
+import 'core/theme/app_theme.dart';
+import 'features/home/presentation/pages/home_page.dart';
 
 void main() => runApp(const AppRoot());
 
@@ -10,10 +11,11 @@ class AppRoot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ProviderScope(
+    return ProviderScope(
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: HabitsListPage(),
+        theme: AppTheme.light(),
+        home: const HomePage(),
       ),
     );
   }
