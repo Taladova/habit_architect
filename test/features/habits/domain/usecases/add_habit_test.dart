@@ -17,10 +17,7 @@ void main() {
 
   setUp(() {
     repo = _MockHabitsRepository();
-    usecase = AddHabit(
-      repo,
-      generateId: () => 'fixed-id',
-    );
+    usecase = AddHabit(repo, generateId: () => 'fixed-id');
   });
 
   test('retourne ValidationFailure si nom vide', () async {
@@ -32,10 +29,7 @@ void main() {
   test('ajoute une habitude correctement', () async {
     when(() => repo.addHabit(any())).thenAnswer((_) async {});
 
-    final result = await usecase(
-      name: 'Lecture',
-      now: DateTime(2026, 2, 24),
-    );
+    final result = await usecase(name: 'Lecture', now: DateTime(2026, 2, 24));
 
     expect(result, isA<Ok<Habit>>());
 

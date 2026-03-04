@@ -22,9 +22,9 @@ class HabitCompletionsTable extends Table {
 
   @override
   List<String> get customConstraints => [
-        'UNIQUE(habit_id, day)',
-        'FOREIGN KEY(habit_id) REFERENCES habits_table(id) ON DELETE CASCADE',
-      ];
+    'UNIQUE(habit_id, day)',
+    'FOREIGN KEY(habit_id) REFERENCES habits_table(id) ON DELETE CASCADE',
+  ];
 }
 
 @DriftDatabase(tables: [HabitsTable, HabitCompletionsTable])

@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:habit_architect/main.dart';
 
 void main() {
-  testWidgets('taper sur une habitude toggle l’icône',
-      (WidgetTester tester) async {
+  testWidgets('taper sur une habitude toggle l’icône', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const AppRoot());
     await tester.pump(const Duration(milliseconds: 200));
 

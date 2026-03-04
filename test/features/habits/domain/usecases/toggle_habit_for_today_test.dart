@@ -29,8 +29,12 @@ void main() {
     );
 
     when(() => repo.getHabitById(habitId)).thenAnswer((_) async => habit);
-    when(() => repo.toggleHabitForToday(habitId: habitId, today: any(named: 'today')))
-        .thenAnswer((_) async {});
+    when(
+      () => repo.toggleHabitForToday(
+        habitId: habitId,
+        today: any(named: 'today'),
+      ),
+    ).thenAnswer((_) async {});
 
     final result = await usecase(habitId: habitId, now: now);
 
@@ -38,7 +42,12 @@ void main() {
     final updated = (result as Ok<Habit>).value;
     expect(updated.completedDays.length, 1);
 
-    verify(() => repo.toggleHabitForToday(habitId: habitId, today: any(named: 'today'))).called(1);
+    verify(
+      () => repo.toggleHabitForToday(
+        habitId: habitId,
+        today: any(named: 'today'),
+      ),
+    ).called(1);
   });
 
   test('retire "today" si déjà complété', () async {
@@ -53,8 +62,12 @@ void main() {
     );
 
     when(() => repo.getHabitById(habitId)).thenAnswer((_) async => habit);
-    when(() => repo.toggleHabitForToday(habitId: habitId, today: any(named: 'today')))
-        .thenAnswer((_) async {});
+    when(
+      () => repo.toggleHabitForToday(
+        habitId: habitId,
+        today: any(named: 'today'),
+      ),
+    ).thenAnswer((_) async {});
 
     final result = await usecase(habitId: habitId, now: now);
 
@@ -62,6 +75,11 @@ void main() {
     final updated = (result as Ok<Habit>).value;
     expect(updated.completedDays.isEmpty, true);
 
-    verify(() => repo.toggleHabitForToday(habitId: habitId, today: any(named: 'today'))).called(1);
+    verify(
+      () => repo.toggleHabitForToday(
+        habitId: habitId,
+        today: any(named: 'today'),
+      ),
+    ).called(1);
   });
 }

@@ -9,10 +9,8 @@ class AddHabit {
   final HabitsRepository _repo;
   final IdGenerator _generateId;
 
-  AddHabit(
-    this._repo, {
-    required IdGenerator generateId,
-  }) : _generateId = generateId;
+  AddHabit(this._repo, {required IdGenerator generateId})
+    : _generateId = generateId;
 
   Future<Result<Habit>> call({
     required String name,

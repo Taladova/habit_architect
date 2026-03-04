@@ -41,7 +41,9 @@ class StatsPage extends ConsumerWidget {
           final totalHabits = habits.length;
           final bestStreak = habits.isEmpty
               ? 0
-              : habits.map((h) => h.currentStreak).reduce((a, b) => a > b ? a : b);
+              : habits
+                    .map((h) => h.currentStreak)
+                    .reduce((a, b) => a > b ? a : b);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -117,8 +119,8 @@ class _StatCard extends StatelessWidget {
                   Text(
                     value,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ],
               ),

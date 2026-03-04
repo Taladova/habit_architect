@@ -94,7 +94,6 @@ class FakeInMemoryHabitsRepository implements HabitsRepository {
   }) async {
     // On réutilise la logique date (source unique)
     await toggleHabitForDate(habitId: habitId, date: today);
-    
   }
 
   void dispose() {

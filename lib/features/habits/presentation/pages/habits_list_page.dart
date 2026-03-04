@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:habit_architect/core/theme/app_colors.dart';
-import 'package:habit_architect/features/home/presentation/pages/stats_page.dart';
+import 'package:habit_architect/features/stats/presentation/pages/stats_page.dart';
 
 import '../../../../core/utils/date_only.dart';
 import '../providers/habits_controller.dart';

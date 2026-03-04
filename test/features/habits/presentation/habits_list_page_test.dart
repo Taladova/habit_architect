@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:habit_architect/main.dart';
 
 void main() {
-  testWidgets('ajouter une habitude affiche la nouvelle habitude',
-      (WidgetTester tester) async {
+  testWidgets('ajouter une habitude affiche la nouvelle habitude', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const AppRoot());
 
     // l’arbre des widgets
