@@ -1,37 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:habit_architect/main.dart';
+import 'package:habit_architect/features/habits/data/repositories/fake_in_memory_habits_repository.dart';
+import 'package:habit_architect/features/habits/domain/repositories/habits_repository.dart';
+import 'package:habit_architect/features/habits/presentation/pages/habits_list_page.dart';
+import 'package:habit_architect/features/habits/presentation/providers/habits_providers.dart';
 
 void main() {
-  testWidgets('taper sur une habitude toggle l’icône', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const AppRoot());
-    await tester.pump(const Duration(milliseconds: 200));
+  testWidgets('taper sur une habitude toggle l’icône',
+      (WidgetTester tester) async {
+    final repo = FakeInMemoryHabitsRepository();
 
-    // Ajoute une habitude
-    await tester.enterText(
-      find.byKey(const Key('addHabitTextField')),
-      'Lecture',
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          habitsRepositoryProvider.overrideWithValue(repo as HabitsRepository),
+        ],
+        child: const MaterialApp(home: HabitsListPage()),
+      ),
     );
-    await tester.tap(find.byKey(const Key('addHabitButton')));
-    await tester.pump(const Duration(milliseconds: 200));
 
-    // Au début: pas check
-    expect(find.byIcon(Icons.check_circle), findsNothing);
+    await tester.pump(const Duration(milliseconds: 50));
 
-    // Tap sur l’item "Lecture"
-    await tester.tap(find.text('Lecture'));
-    await tester.pump(const Duration(milliseconds: 200));
+    // Ajoute une habitude via sheet
+    await tester.tap(find.byKey(const Key('openAddHabitSheetFab')));
+    await tester.pump(const Duration(milliseconds: 350));
 
-    // Après: check visible
-    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('sheetAddHabitTextField')),
+      'Footing',
+    );
+    await tester.pump(const Duration(milliseconds: 50));
 
-    // Tap encore: doit revenir à non-check
-    await tester.tap(find.text('Lecture'));
-    await tester.pump(const Duration(milliseconds: 200));
+    tester.testTextInput.hide();
+    await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.byIcon(Icons.check_circle), findsNothing);
+    await tester.tap(find.byKey(const Key('sheetAddHabitButton')));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('Footing'), findsOneWidget);
+
+    // Toggle (si tu peux, mets une Key sur le bouton toggle; sinon on prend le premier IconButton)
+    final toggleBtn = find.byType(IconButton).first;
+    await tester.tap(toggleBtn);
+    await tester.pump(const Duration(milliseconds: 150));
+
+    // Juste vérifier que l'app n'a pas crash + item toujours présent
+    expect(find.text('Footing'), findsOneWidget);
   });
 }

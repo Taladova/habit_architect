@@ -3,11 +3,10 @@ import 'package:habit_architect/features/habits/domain/entities/habit.dart';
 // ignore: depend_on_referenced_packages, file_names
 import 'package:flutter_test/flutter_test.dart';
 // ignore: depend_on_referenced_packages
-import 'package:mocktail/mocktail.dart';
 // import 'package:uuid/uuid.dart';
 
 import 'package:habit_architect/core/utils/result.dart';
-import 'package:habit_architect/features/habits/domain/entities/habit.dart';
+// import 'package:habit_architect/features/habits/domain/entities/habit.dart';
 import 'package:habit_architect/features/habits/domain/repositories/habits_repository.dart';
 import 'package:habit_architect/features/habits/domain/usecases/add_habit.dart';
 

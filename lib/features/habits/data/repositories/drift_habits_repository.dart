@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
-import 'package:async/async.dart';
 
 import '../../../../core/db/app_database.dart';
 import '../../../../core/utils/date_only.dart';

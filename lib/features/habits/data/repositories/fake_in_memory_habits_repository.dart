@@ -19,9 +19,12 @@ class FakeInMemoryHabitsRepository implements HabitsRepository {
   }
 
   @override
-  Stream<List<Habit>> watchHabits() {
-    // broadcast + valeur initiale déjà envoyée dans le ctor via _emit()
-    return _controller.stream;
+  Stream<List<Habit>> watchHabits() async* {
+    // Valeur initiale (sinon Riverpod reste en loading)
+    yield List.unmodifiable(_habits);
+
+    // Puis les updates
+    yield* _controller.stream.map((list) => List.unmodifiable(list));
   }
 
   @override

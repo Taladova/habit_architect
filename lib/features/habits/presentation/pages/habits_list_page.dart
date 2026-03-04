@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:habit_architect/core/theme/app_colors.dart';
 import 'package:habit_architect/features/stats/presentation/pages/stats_page.dart';
 
-import '../../../../core/utils/date_only.dart';
 import '../providers/habits_controller.dart';
 import '../providers/habits_providers.dart';
 import 'habit_details_page.dart';
@@ -17,8 +16,6 @@ class HabitsListPage extends ConsumerStatefulWidget {
 
 class _HabitsListPageState extends ConsumerState<HabitsListPage> {
   void _openAddHabitSheet() {
-    final nameController = TextEditingController();
-
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -27,83 +24,17 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (sheetContext) {
-        Future<void> submit() async {
-          final name = nameController.text.trim();
-          if (name.isEmpty) return;
-
-          // ✅ action
+      builder: (sheetContext) => _AddHabitSheet(
+        onSubmit: (name) async {
           await ref.read(habitsControllerProvider).addHabit(name);
 
-          // ✅ important: fermer le sheet d'abord (avec le context du sheet)
+          // fermer le sheet avec le BON context
           if (Navigator.of(sheetContext).canPop()) {
             Navigator.of(sheetContext).pop();
           }
-
-          // ✅ dispose après fermeture
-          nameController.dispose();
-        }
-
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 8,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 6),
-              Text(
-                'Nouvelle habitude',
-                style: Theme.of(
-                  sheetContext,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('sheetAddHabitTextField'),
-                controller: nameController,
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  hintText: 'Ex: Lecture',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => submit(),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton(
-                  key: const Key('sheetAddHabitButton'),
-                  onPressed: submit,
-                  child: const Text('Ajouter'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    ).then((_) {
-      // ✅ si l’utilisateur ferme le sheet sans ajouter (swipe/down/back)
-      if (!nameController.hasListeners) {
-        // évite double dispose
-        // (simplement ignorer, ou faire un try/catch)
-      }
-      try {
-        nameController.dispose();
-      } catch (_) {}
-    });
-  }
-
-  void _submitAddHabit(TextEditingController controller) {
-    final name = controller.text.trim();
-    if (name.isEmpty) return;
-    ref.read(habitsControllerProvider).addHabit(name);
-    Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   @override
@@ -111,7 +42,6 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
     final cs = Theme.of(context).colorScheme;
     final habitsAsync = ref.watch(habitsStreamProvider);
     final habitsController = ref.read(habitsControllerProvider);
-    final topInset = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -146,16 +76,14 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
           IconButton(
             icon: const Icon(Icons.insights_rounded),
             onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const StatsPage()));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StatsPage()),
+              );
             },
           ),
         ],
       ),
-
       body: Container(
-        // petit fond doux sous l'appbar
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -190,22 +118,24 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                           Icon(
                             Icons.auto_awesome_rounded,
                             size: 46,
-                            color: cs.onSurface.withOpacity(0.7),
+                            color: cs.onSurface.withAlpha(180),
                           ),
                           const SizedBox(height: 10),
                           Text(
                             'Aucune habitude',
-                            style: Theme.of(context).textTheme.titleLarge
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Ajoute la première avec le bouton +',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: cs.onSurface.withOpacity(0.7),
-                                ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: cs.onSurface.withAlpha(170)),
                           ),
                         ],
                       ),
@@ -213,31 +143,29 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                   );
                 }
 
-                final today = dateOnly(DateTime.now());
-
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(12, 6, 12, 100),
                   itemCount: habits.length,
-                  separatorBuilder: (context, index) =>
-                      Divider(height: 16, color: cs.outline.withOpacity(0.10)),
+                  separatorBuilder: (context, index) => Divider(
+                    height: 16,
+                    color: cs.outline.withAlpha(26),
+                  ),
                   itemBuilder: (context, i) {
                     final h = habits[i];
 
                     final now = DateTime.now();
                     final last7 = _lastNDays(now, 7);
 
-                    // combien de jours cochés sur les 7 derniers
                     final done7 = last7.where((day) {
                       return h.completedDays.any((d) => _isSameDay(d, day));
                     }).length;
 
                     final progress = done7 / 7.0;
-                    final percent = ((progress * 100).round());
+                    final percent = (progress * 100).round();
 
                     final today = DateTime(now.year, now.month, now.day);
-                    final doneToday = h.completedDays.any(
-                      (d) => _isSameDay(d, today),
-                    );
+                    final doneToday =
+                        h.completedDays.any((d) => _isSameDay(d, today));
 
                     return Dismissible(
                       key: Key('dismiss_${h.id}'),
@@ -257,7 +185,8 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                       ),
                       onDismissed: (_) async {
                         await habitsController.deleteHabit(h.id);
-                        if (!context.mounted) return;
+
+                        if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Habitude supprimée')),
                         );
@@ -266,7 +195,7 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: cs.outline.withOpacity(0.10)),
+                          side: BorderSide(color: cs.outline.withAlpha(26)),
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
@@ -284,15 +213,12 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                               children: [
                                 Row(
                                   children: [
-                                    // Badge gauche
                                     Container(
                                       width: 42,
                                       height: 42,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(14),
-                                        color: AppColors.primary.withOpacity(
-                                          0.14,
-                                        ),
+                                        color: AppColors.primary.withAlpha(36),
                                       ),
                                       child: const Icon(
                                         Icons.checklist_rounded,
@@ -300,7 +226,6 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -317,33 +242,22 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            // 'Complétions: ${h.completedDays.length}',
-                                            ('7 jours: $done7/7'),
+                                            '7 jours: $done7/7',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodySmall
                                                 ?.copyWith(
                                                   color: cs.onSurface
-                                                      .withOpacity(0.65),
+                                                      .withAlpha(166),
                                                 ),
                                           ),
                                         ],
                                       ),
                                     ),
-
-                                    // Toggle (icône à droite)
                                     IconButton.filledTonal(
-                                      onPressed: () async {
-                                        // debugPrint(
-                                        //   '✅ UI: toggle pressed for ${h.id}',
-                                        // );
-                                        debugPrint(
-                                          'TOGGLE LIST => id=${h.id} name=${h.name}',
-                                        );
-                                        await ref
-                                            .read(habitsControllerProvider)
-                                            .toggleToday(h.id);
-                                      },
+                                      key: Key('toggle_${h.id}'),
+                                      onPressed: () =>
+                                          habitsController.toggleToday(h.id),
                                       icon: Icon(
                                         doneToday
                                             ? Icons.check_circle_rounded
@@ -352,16 +266,13 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                     ),
                                   ],
                                 ),
-
                                 const SizedBox(height: 12),
-
                                 Row(
                                   children: [
                                     Expanded(
                                       child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(999),
                                         child: LinearProgressIndicator(
                                           value: progress,
                                           minHeight: 8,
@@ -376,24 +287,18 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
+                                          ?.copyWith(fontWeight: FontWeight.w800),
                                     ),
                                   ],
                                 ),
-
                                 const SizedBox(height: 12),
-
                                 _WeekDots(
                                   days: last7,
                                   isDone: (day) => h.completedDays.any(
                                     (d) => _isSameDay(d, day),
                                   ),
                                 ),
-
                                 const SizedBox(height: 10),
-
                                 Wrap(
                                   spacing: 8,
                                   runSpacing: 8,
@@ -425,12 +330,91 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
           ),
         ),
       ),
-
       floatingActionButton: FloatingActionButton(
+        key: const Key('openAddHabitSheetFab'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         onPressed: _openAddHabitSheet,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _AddHabitSheet extends StatefulWidget {
+  const _AddHabitSheet({required this.onSubmit});
+  final Future<void> Function(String name) onSubmit;
+
+  @override
+  State<_AddHabitSheet> createState() => _AddHabitSheetState();
+}
+
+class _AddHabitSheetState extends State<_AddHabitSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _controller.text.trim();
+    if (name.isEmpty) return;
+
+    await widget.onSubmit(name);
+    // Pas besoin de dispose ici (fait dans dispose)
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 6),
+          Text(
+            'Nouvelle habitude',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('sheetAddHabitTextField'),
+            controller: _controller,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              hintText: 'Ex: Lecture',
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              key: const Key('sheetAddHabitButton'),
+              onPressed: _submit,
+              child: const Text('Ajouter'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -449,9 +433,9 @@ class _MiniInfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withOpacity(0.65),
+        color: cs.surfaceContainerHighest.withAlpha(170),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.outline.withOpacity(0.12)),
+        border: Border.all(color: cs.outline.withAlpha(31)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -460,9 +444,10 @@ class _MiniInfoChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -501,9 +486,9 @@ class _WeekDots extends StatelessWidget {
               Text(
                 labels[i],
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface.withOpacity(0.65),
-                ),
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface.withAlpha(166),
+                    ),
               ),
               const SizedBox(height: 6),
               AnimatedContainer(
@@ -514,7 +499,7 @@ class _WeekDots extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: done ? cs.primary : cs.surfaceContainerHighest,
                   border: Border.all(
-                    color: done ? cs.primary : cs.outline.withOpacity(0.35),
+                    color: done ? cs.primary : cs.outline.withAlpha(90),
                   ),
                 ),
               ),

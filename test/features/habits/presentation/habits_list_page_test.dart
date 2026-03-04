@@ -1,33 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:habit_architect/main.dart';
+import 'package:habit_architect/features/habits/data/repositories/fake_in_memory_habits_repository.dart';
+import 'package:habit_architect/features/habits/domain/repositories/habits_repository.dart';
+import 'package:habit_architect/features/habits/presentation/pages/habits_list_page.dart';
+import 'package:habit_architect/features/habits/presentation/providers/habits_providers.dart';
 
 void main() {
-  testWidgets('ajouter une habitude affiche la nouvelle habitude', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const AppRoot());
+  testWidgets('ajouter une habitude affiche la nouvelle habitude',
+      (WidgetTester tester) async {
+    final repo = FakeInMemoryHabitsRepository();
 
-    // l’arbre des widgets
-    // debugDumpApp();
-
-    // Laisse le temps au StreamProvider d'émettre (loading -> data)
-    await tester.pump(const Duration(milliseconds: 200));
-
-    // Entre du texte
-    await tester.enterText(
-      find.byKey(const Key('addHabitTextField')),
-      'Lecture',
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          habitsRepositoryProvider.overrideWithValue(repo as HabitsRepository),
+        ],
+        child: const MaterialApp(home: HabitsListPage()),
+      ),
     );
 
-    // Clique sur ajouter
-    await tester.tap(find.byKey(const Key('addHabitButton')));
+    // Laisse Riverpod recevoir la 1ère valeur du stream
+    await tester.pump(const Duration(milliseconds: 50));
 
-    // Laisse le temps au stream d'émettre + rebuild
-    await tester.pump(const Duration(milliseconds: 200));
+    // Ouvre la sheet
+    await tester.tap(find.byKey(const Key('openAddHabitSheetFab')));
+    await tester.pump(const Duration(milliseconds: 350)); // animation sheet
 
-    // Vérifie que "Lecture" apparaît
+    // Tape le texte
+    await tester.enterText(
+      find.byKey(const Key('sheetAddHabitTextField')),
+      'Lecture',
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Ferme le clavier (important)
+    tester.testTextInput.hide();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Clique ajouter
+    await tester.tap(find.byKey(const Key('sheetAddHabitButton')));
+    await tester.pump(const Duration(milliseconds: 350)); // fermeture sheet
+
+    // Vérifie
     expect(find.text('Lecture'), findsOneWidget);
   });
 }
