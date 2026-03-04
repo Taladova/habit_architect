@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:habit_architect/core/theme/app_colors.dart';
 
@@ -231,7 +233,7 @@ class _FeatureRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: AppColors.primary.withOpacity(0.18),
             ),
-            child: Icon(icon, size: 18, color: AppColors.surface),
+            child: Icon(icon, size: 18, color: AppColors.primary),
           ),
           const SizedBox(width: 12),
           Expanded(

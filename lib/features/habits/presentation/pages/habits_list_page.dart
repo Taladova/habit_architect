@@ -16,11 +16,14 @@ class HabitsListPage extends ConsumerStatefulWidget {
 
 class _HabitsListPageState extends ConsumerState<HabitsListPage> {
   void _openAddHabitSheet() {
+    // ✅ Capturer AVANT (plus d'accès context après)
+    final cs = Theme.of(context).colorScheme;
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: cs.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
@@ -28,8 +31,10 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
         onSubmit: (name) async {
           await ref.read(habitsControllerProvider).addHabit(name);
 
-          // fermer le sheet avec le BON context
+          // ✅ fermer avec sheetContext, pas context
+          // ignore: use_build_context_synchronously
           if (Navigator.of(sheetContext).canPop()) {
+            // ignore: use_build_context_synchronously
             Navigator.of(sheetContext).pop();
           }
         },
@@ -76,9 +81,9 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
           IconButton(
             icon: const Icon(Icons.insights_rounded),
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const StatsPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const StatsPage()));
             },
           ),
         ],
@@ -123,18 +128,14 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                           const SizedBox(height: 10),
                           Text(
                             'Aucune habitude',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
+                            style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Ajoute la première avec le bouton +',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: cs.onSurface.withAlpha(170)),
                           ),
                         ],
@@ -146,10 +147,8 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(12, 6, 12, 100),
                   itemCount: habits.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 16,
-                    color: cs.outline.withAlpha(26),
-                  ),
+                  separatorBuilder: (context, index) =>
+                      Divider(height: 16, color: cs.outline.withAlpha(26)),
                   itemBuilder: (context, i) {
                     final h = habits[i];
 
@@ -164,8 +163,9 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                     final percent = (progress * 100).round();
 
                     final today = DateTime(now.year, now.month, now.day);
-                    final doneToday =
-                        h.completedDays.any((d) => _isSameDay(d, today));
+                    final doneToday = h.completedDays.any(
+                      (d) => _isSameDay(d, today),
+                    );
 
                     return Dismissible(
                       key: Key('dismiss_${h.id}'),
@@ -184,10 +184,13 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                         ),
                       ),
                       onDismissed: (_) async {
+                        // ✅ capturer avant async
+                        final messenger = ScaffoldMessenger.of(context);
+
                         await habitsController.deleteHabit(h.id);
 
                         if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(content: Text('Habitude supprimée')),
                         );
                       },
@@ -247,8 +250,9 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                                 .textTheme
                                                 .bodySmall
                                                 ?.copyWith(
-                                                  color: cs.onSurface
-                                                      .withAlpha(166),
+                                                  color: cs.onSurface.withAlpha(
+                                                    166,
+                                                  ),
                                                 ),
                                           ),
                                         ],
@@ -271,8 +275,9 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                   children: [
                                     Expanded(
                                       child: ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                         child: LinearProgressIndicator(
                                           value: progress,
                                           minHeight: 8,
@@ -287,7 +292,9 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelMedium
-                                          ?.copyWith(fontWeight: FontWeight.w800),
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -387,10 +394,9 @@ class _AddHabitSheetState extends State<_AddHabitSheet> {
           const SizedBox(height: 6),
           Text(
             'Nouvelle habitude',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -444,10 +450,9 @@ class _MiniInfoChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -486,9 +491,9 @@ class _WeekDots extends StatelessWidget {
               Text(
                 labels[i],
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurface.withAlpha(166),
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface.withAlpha(166),
+                ),
               ),
               const SizedBox(height: 6),
               AnimatedContainer(

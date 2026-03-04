@@ -183,6 +183,7 @@ class _DayDot extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           color: isDone ? Theme.of(context).colorScheme.primaryContainer : null,
           border: Border.all(
+            // ignore: deprecated_member_use
             color: Theme.of(context).colorScheme.outline.withOpacity(0.35),
           ),
         ),
