@@ -20,16 +20,15 @@ class ToggleHabitForToday {
     final today = dateOnly(now);
 
     try {
-      // 1) check habit exists
       final before = await _repo.getHabitById(habitId);
       if (before == null) {
         return Err(ValidationFailure('Habitude introuvable.'));
       }
 
-      // 2) toggle in repo (source de vérité)
+      // ✅ source de vérité = repository
       await _repo.toggleHabitForToday(habitId: habitId, today: today);
 
-      // 3) re-read after toggle (retour fiable)
+      // ✅ relire après toggle (état réel)
       final after = await _repo.getHabitById(habitId);
       if (after == null) {
         return Err(RepositoryFailure('Habitude introuvable après toggle.'));

@@ -63,6 +63,7 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
               ),
               const SizedBox(height: 12),
               TextField(
+                key: const Key('sheetAddHabitTextField'),
                 controller: nameController,
                 autofocus: true,
                 textInputAction: TextInputAction.done,
@@ -77,6 +78,7 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                 width: double.infinity,
                 height: 48,
                 child: FilledButton(
+                  key: const Key('sheetAddHabitButton'),
                   onPressed: submit,
                   child: const Text('Ajouter'),
                 ),

@@ -12,23 +12,41 @@ void main() {
   late HabitsRepository repo;
   late ToggleHabitForToday usecase;
 
+  setUpAll(() {
+    // fallback pour any(named: 'today') sur DateTime
+    registerFallbackValue(DateTime(2000, 1, 1));
+  });
+
   setUp(() {
     repo = _MockHabitsRepository();
     usecase = ToggleHabitForToday(repo);
   });
 
   test('ajoute "today" si pas déjà complété', () async {
-    final now = DateTime(2026, 2, 24, 10, 30);
+    final now = DateTime(2026, 3, 4, 10, 30);
     const habitId = 'h1';
+    final today = DateTime(2026, 3, 4);
 
-    final habit = Habit(
+    final before = Habit(
       id: habitId,
       name: 'Lecture',
       createdAt: DateTime(2026, 2, 1),
       completedDays: const [],
     );
 
-    when(() => repo.getHabitById(habitId)).thenAnswer((_) async => habit);
+    final after = Habit(
+      id: habitId,
+      name: 'Lecture',
+      createdAt: DateTime(2026, 2, 1),
+      completedDays: [today],
+    );
+
+    var callCount = 0;
+    when(() => repo.getHabitById(habitId)).thenAnswer((_) async {
+      callCount++;
+      return callCount == 1 ? before : after;
+    });
+
     when(
       () => repo.toggleHabitForToday(
         habitId: habitId,
@@ -40,8 +58,10 @@ void main() {
 
     expect(result, isA<Ok<Habit>>());
     final updated = (result as Ok<Habit>).value;
-    expect(updated.completedDays.length, 1);
 
+    expect(updated.completedDays.any((d) => _isSameDay(d, today)), true);
+
+    verify(() => repo.getHabitById(habitId)).called(2);
     verify(
       () => repo.toggleHabitForToday(
         habitId: habitId,
@@ -53,15 +73,28 @@ void main() {
   test('retire "today" si déjà complété', () async {
     final now = DateTime(2026, 2, 24, 18, 00);
     const habitId = 'h1';
+    final today = DateTime(2026, 2, 24);
 
-    final habit = Habit(
+    final before = Habit(
       id: habitId,
       name: 'Lecture',
       createdAt: DateTime(2026, 2, 1),
       completedDays: [DateTime(2026, 2, 24, 9, 0)], // même jour, autre heure
     );
 
-    when(() => repo.getHabitById(habitId)).thenAnswer((_) async => habit);
+    final after = Habit(
+      id: habitId,
+      name: 'Lecture',
+      createdAt: DateTime(2026, 2, 1),
+      completedDays: const [], // décoché
+    );
+
+    var callCount = 0;
+    when(() => repo.getHabitById(habitId)).thenAnswer((_) async {
+      callCount++;
+      return callCount == 1 ? before : after;
+    });
+
     when(
       () => repo.toggleHabitForToday(
         habitId: habitId,
@@ -73,8 +106,10 @@ void main() {
 
     expect(result, isA<Ok<Habit>>());
     final updated = (result as Ok<Habit>).value;
-    expect(updated.completedDays.isEmpty, true);
 
+    expect(updated.completedDays.any((d) => _isSameDay(d, today)), false);
+
+    verify(() => repo.getHabitById(habitId)).called(2);
     verify(
       () => repo.toggleHabitForToday(
         habitId: habitId,
@@ -83,3 +118,6 @@ void main() {
     ).called(1);
   });
 }
+
+bool _isSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
