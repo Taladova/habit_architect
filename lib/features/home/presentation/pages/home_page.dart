@@ -233,7 +233,7 @@ class _FeatureRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: AppColors.primary.withOpacity(0.18),
             ),
-            child: Icon(icon, size: 18, color: AppColors.primary),
+            child: Icon(icon, size: 18, color: AppColors.surface),
           ),
           const SizedBox(width: 12),
           Expanded(

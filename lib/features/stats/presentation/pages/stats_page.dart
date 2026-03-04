@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:habit_architect/core/theme/app_colors.dart';
 
 import '../../../habits/presentation/providers/habits_providers.dart';
 
@@ -11,69 +12,124 @@ class StatsPage extends ConsumerWidget {
     final habitsAsync = ref.watch(habitsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistiques')),
-      body: habitsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur: $e')),
-        data: (habits) {
-          final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
-
-          int doneToday = 0;
-          int doneLast7 = 0;
-
-          final last7 = List.generate(
-            7,
-            (i) => today.subtract(Duration(days: 6 - i)),
-          );
-
-          for (final h in habits) {
-            if (h.completedDays.any((d) => _isSameDay(d, today))) {
-              doneToday++;
-            }
-            for (final day in last7) {
-              if (h.completedDays.any((d) => _isSameDay(d, day))) {
-                doneLast7++;
-              }
-            }
-          }
-
-          final totalHabits = habits.length;
-          final bestStreak = habits.isEmpty
-              ? 0
-              : habits
-                    .map((h) => h.currentStreak)
-                    .reduce((a, b) => a > b ? a : b);
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _StatCard(
-                title: 'Habitudes',
-                value: '$totalHabits',
-                icon: Icons.list_alt_rounded,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.secondary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: Row(
+          children: [
+            Image.asset('assets/branding/logo.png', height: 26),
+            const SizedBox(width: 10),
+            const Text(
+              'Statistiques',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                letterSpacing: 0.2,
               ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: 'Faites aujourd’hui',
-                value: '$doneToday / $totalHabits',
-                icon: Icons.check_circle_rounded,
-              ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: 'Complétions (7 jours)',
-                value: '$doneLast7',
-                icon: Icons.calendar_today_rounded,
-              ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: 'Meilleur streak',
-                value: '$bestStreak 🔥',
-                icon: Icons.local_fire_department_rounded,
-              ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.insights_rounded),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const StatsPage()));
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.secondary, AppColors.surface],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight + 12,
+            ),
+            child: habitsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Erreur: $e')),
+              data: (habits) {
+                final now = DateTime.now();
+                final today = DateTime(now.year, now.month, now.day);
+
+                int doneToday = 0;
+                int doneLast7 = 0;
+
+                final last7 = List.generate(
+                  7,
+                  (i) => today.subtract(Duration(days: 6 - i)),
+                );
+
+                for (final h in habits) {
+                  if (h.completedDays.any((d) => _isSameDay(d, today))) {
+                    doneToday++;
+                  }
+                  for (final day in last7) {
+                    if (h.completedDays.any((d) => _isSameDay(d, day))) {
+                      doneLast7++;
+                    }
+                  }
+                }
+
+                final totalHabits = habits.length;
+                final bestStreak = habits.isEmpty
+                    ? 0
+                    : habits
+                          .map((h) => h.currentStreak)
+                          .reduce((a, b) => a > b ? a : b);
+
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _StatCard(
+                      title: 'Habitudes',
+                      value: '$totalHabits',
+                      icon: Icons.list_alt_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    _StatCard(
+                      title: 'Faites aujourd’hui',
+                      value: '$doneToday / $totalHabits',
+                      icon: Icons.check_circle_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    _StatCard(
+                      title: 'Complétions (7 jours)',
+                      value: '$doneLast7',
+                      icon: Icons.calendar_today_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    _StatCard(
+                      title: 'Meilleur streak',
+                      value: '$bestStreak 🔥',
+                      icon: Icons.local_fire_department_rounded,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:habit_architect/core/theme/app_colors.dart';
 
 import '../../domain/entities/habit.dart';
 import '../providers/habits_controller.dart';
@@ -14,6 +15,7 @@ class HabitDetailsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitsStreamProvider);
     final controller = ref.read(habitsControllerProvider);
+    final cs = Theme.of(context).colorScheme;
 
     return habitsAsync.when(
       loading: () =>
@@ -23,7 +25,6 @@ class HabitDetailsPage extends ConsumerWidget {
         body: Center(child: Text('Erreur: $e')),
       ),
       data: (habits) {
-        // ✅ type-safe
         final Habit? habit = habits
             .whereType<Habit>()
             .cast<Habit?>()
@@ -38,16 +39,41 @@ class HabitDetailsPage extends ConsumerWidget {
 
         final now = DateTime.now();
         final doneToday = habit.completedDays.any((d) => _isSameDay(d, now));
-
-        final base = DateTime(now.year, now.month, now.day);
-        final last7Days = List.generate(
-          7,
-          (i) => base.subtract(Duration(days: 6 - i)),
-        );
+        final weekDays = weekMondayToSunday(now);
 
         return Scaffold(
+          extendBodyBehindAppBar: true,
           appBar: AppBar(
-            title: Text(habit.name),
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.secondary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            title: Row(
+              children: [
+                Image.asset('assets/branding/logo.png', height: 26),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    habit.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             actions: [
               IconButton(
                 tooltip: 'Supprimer',
@@ -74,83 +100,105 @@ class HabitDetailsPage extends ConsumerWidget {
                   if (ok != true) return;
 
                   await controller.deleteHabit(habit.id);
-
-                  // ✅ revenir à la liste après suppression
                   if (context.mounted) Navigator.pop(context);
                 },
               ),
             ],
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Row(
-                children: [
-                  Chip(label: Text('🔥 ${habit.currentStreak}')),
-                  const SizedBox(width: 8),
-                  Chip(
-                    label: Text(
-                      doneToday ? "Aujourd’hui ✅" : "Pas fait aujourd’hui",
-                    ),
-                  ),
-                ],
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.secondary, cs.surface],
               ),
-              const SizedBox(height: 16),
-
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            ),
+            child: SafeArea(
+              top: false,
+              child: ListView(
+                // ✅ PADDING GLOBAL (c’est ça qui manquait)
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  MediaQuery.of(context).padding.top + kToolbarHeight + 16,
+                  16,
+                  24,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ✅ Chips propres (wrap = pas de débordement)
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
-                      Text(
-                        '7 derniers jours',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          for (final day in last7Days)
-                            _DayDot(
-                              date: day,
-                              isDone: habit.completedDays.any(
-                                (d) => _isSameDay(d, day),
-                              ),
-                              onTap: () => controller.toggleDate(habit.id, day),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton.icon(
-                          // ✅ IMPORTANT : await + pop => retour à la liste
-                          onPressed: () async {
-                            await controller.toggleToday(habit.id);
-                            if (context.mounted) Navigator.pop(context);
-                          },
-                          icon: Icon(doneToday ? Icons.undo : Icons.check),
-                          label: Text(
-                            doneToday
-                                ? "Annuler aujourd’hui"
-                                : "Cocher aujourd’hui",
-                          ),
+                      Chip(label: Text('🔥 ${habit.currentStreak}')),
+                      Chip(
+                        label: Text(
+                          doneToday ? "Aujourd’hui ✅" : "Pas fait aujourd’hui",
                         ),
                       ),
                     ],
                   ),
-                ),
+
+                  const SizedBox(height: 16),
+
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: BorderSide(color: cs.outline.withOpacity(0.10)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Semaine (L → D)',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 12),
+
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              for (final day in weekDays)
+                                _DayDot(
+                                  date: day,
+                                  isDone: habit.completedDays.any(
+                                    (d) => _isSameDay(d, day),
+                                  ),
+                                  onTap: () =>
+                                      controller.toggleDate(habit.id, day),
+                                ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: FilledButton.icon(
+                              onPressed: () async {
+                                await controller.toggleToday(habit.id);
+                                if (context.mounted) Navigator.pop(context);
+                              },
+                              icon: Icon(doneToday ? Icons.undo : Icons.check),
+                              label: Text(
+                                doneToday
+                                    ? "Annuler aujourd’hui"
+                                    : "Cocher aujourd’hui",
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -171,7 +219,8 @@ class _DayDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = ['L', 'M', 'M', 'J', 'V', 'S', 'D'][date.weekday - 1];
+    final cs = Theme.of(context).colorScheme;
+    final label = const ['L', 'M', 'M', 'J', 'V', 'S', 'D'][date.weekday - 1];
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -181,10 +230,9 @@ class _DayDot extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: isDone ? Theme.of(context).colorScheme.primaryContainer : null,
+          color: isDone ? cs.primaryContainer : cs.surface,
           border: Border.all(
-            // ignore: deprecated_member_use
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.35),
+            color: cs.outline.withOpacity(0.35),
           ),
         ),
         child: Column(
@@ -195,6 +243,7 @@ class _DayDot extends StatelessWidget {
             Icon(
               isDone ? Icons.check_circle_rounded : Icons.circle_outlined,
               size: 18,
+              color: isDone ? cs.onPrimaryContainer : cs.onSurfaceVariant,
             ),
           ],
         ),
@@ -205,3 +254,10 @@ class _DayDot extends StatelessWidget {
 
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
+
+// ✅ Semaine fixe: Lundi -> Dimanche (ordre stable)
+List<DateTime> weekMondayToSunday(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  final monday = today.subtract(Duration(days: today.weekday - 1));
+  return List.generate(7, (i) => monday.add(Duration(days: i)));
+}

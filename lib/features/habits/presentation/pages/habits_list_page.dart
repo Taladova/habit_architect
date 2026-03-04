@@ -153,9 +153,9 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                     final h = habits[i];
 
                     final now = DateTime.now();
-                    final last7 = _lastNDays(now, 7);
+                    final weekDays = weekMondayToSunday(now);
 
-                    final done7 = last7.where((day) {
+                    final done7 = weekDays.where((day) {
                       return h.completedDays.any((d) => _isSameDay(d, day));
                     }).length;
 
@@ -300,7 +300,7 @@ class _HabitsListPageState extends ConsumerState<HabitsListPage> {
                                 ),
                                 const SizedBox(height: 12),
                                 _WeekDots(
-                                  days: last7,
+                                  days: weekDays,
                                   isDone: (day) => h.completedDays.any(
                                     (d) => _isSameDay(d, day),
                                   ),
@@ -463,24 +463,32 @@ class _MiniInfoChip extends StatelessWidget {
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
-List<DateTime> _lastNDays(DateTime now, int n) {
+// List<DateTime> _lastNDays(DateTime now, int n) {
+//   final today = DateTime(now.year, now.month, now.day);
+//   return List.generate(n, (i) => today.subtract(Duration(days: n - 1 - i)));
+// }
+List<DateTime> weekMondayToSunday(DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
-  return List.generate(n, (i) => today.subtract(Duration(days: n - 1 - i)));
+  final monday = today.subtract(
+    Duration(days: today.weekday - 1),
+  ); // weekday: Mon=1
+  return List.generate(7, (i) => monday.add(Duration(days: i)));
 }
 
 class _WeekDots extends StatelessWidget {
   const _WeekDots({required this.days, required this.isDone});
 
-  final List<DateTime> days;
+  final List<DateTime> days; // doit être lundi->dimanche
   final bool Function(DateTime day) isDone;
+
+  static const labels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
   @override
   Widget build(BuildContext context) {
-    final labels = const ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     final cs = Theme.of(context).colorScheme;
 
     return Row(
-      children: List.generate(days.length, (i) {
+      children: List.generate(7, (i) {
         final day = days[i];
         final done = isDone(day);
 
@@ -491,9 +499,9 @@ class _WeekDots extends StatelessWidget {
               Text(
                 labels[i],
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface.withAlpha(166),
-                ),
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface.withValues(alpha: 0.65),
+                    ),
               ),
               const SizedBox(height: 6),
               AnimatedContainer(
@@ -504,7 +512,7 @@ class _WeekDots extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: done ? cs.primary : cs.surfaceContainerHighest,
                   border: Border.all(
-                    color: done ? cs.primary : cs.outline.withAlpha(90),
+                    color: done ? cs.primary : cs.outline.withValues(alpha: 0.35),
                   ),
                 ),
               ),
