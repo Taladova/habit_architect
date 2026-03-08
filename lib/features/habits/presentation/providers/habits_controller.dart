@@ -46,4 +46,8 @@ class HabitsController {
     final toggle = _ref.read(toggleHabitForDateProvider);
     await toggle(habitId: habitId, date: date);
   }
+
+  Future<void> restoreHabit(Habit habit) async {
+    await _ref.read(habitsRepositoryProvider).restoreHabit(habit);
+  }
 }
